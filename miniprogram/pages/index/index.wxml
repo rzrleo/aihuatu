@@ -24,5 +24,6 @@
     <view class="usermotto">
       <text class="user-motto">{{motto}}</text>
     </view>
+    <t-button theme="primary">按钮</t-button>
   </view>
 </scroll-view>

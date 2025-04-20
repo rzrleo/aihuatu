@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI画廊 - 我的 (已登录)</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/tdesign-miniprogram/dist/tdesign.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        .navbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background-color: white;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid #eaeaea;
+            z-index: 100;
+        }
+        .navbar-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #999;
+            font-size: 12px;
+        }
+        .navbar-item.active {
+            color: #0052d9; /* TDesign 主色 */
+        }
+        .navbar-icon {
+            font-size: 24px;
+            margin-bottom: 2px;
+        }
+        .container {
+            padding: 16px;
+            padding-bottom: 70px;
+            padding-top: 70px;
+        }
+        .user-card {
+            background-color: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 16px;
+            border: 2px solid #f0f0f0;
+        }
+        .user-info {
+            flex: 1;
+        }
+        .user-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        .user-id {
+            font-size: 12px;
+            color: #999;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin: 20px 0 12px;
+            color: #333;
+            display: flex;
+            align-items: center;
+        }
+        .section-icon {
+            margin-right: 6px;
+            font-size: 18px;
+        }
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-gap: 8px;
+        }
+        .gallery-item {
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .gallery-img {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            display: block;
+        }
+        .gallery-desc {
+            padding: 8px 10px;
+            font-size: 12px;
+            color: #666;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background-color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            border-bottom: 1px solid #eaeaea;
+            z-index: 10;
+        }
+        .empty-gallery {
+            background-color: white;
+            border-radius: 8px;
+            padding: 30px 20px;
+            text-align: center;
+            color: #999;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .empty-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+            color: #ccc;
+        }
+        .create-btn {
+            background-color: #0052d9;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 16px;
+            font-size: 14px;
+            margin-top: 16px;
+            display: inline-flex;
+            align-items: center;
+        }
+        .btn-icon {
+            margin-right: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">我的</div>
+    
+    <div class="container">
+        <!-- 用户信息卡片 -->
+        <div class="user-card">
+            <img src="https://picsum.photos/200/200?random=user" alt="用户头像" class="user-avatar">
+            <div class="user-info">
+                <div class="user-name">微信用户12345</div>
+                <div class="user-id">ID: 100000123</div>
+            </div>
+        </div>
+        
+        <!-- 个人画廊 -->
+        <div class="section-title">
+            <span class="section-icon">🖼️</span>
+            <span>个人画廊</span>
+        </div>
+        
+        <!-- 如果有图片则显示画廊 -->
+        <div class="gallery">
+            <div class="gallery-item">
+                <img src="https://picsum.photos/400/400?random=10" alt="AI生成图片" class="gallery-img">
+                <div class="gallery-desc">梦幻童话森林，魔法生物</div>
+            </div>
+            
+            <div class="gallery-item">
+                <img src="https://picsum.photos/400/400?random=11" alt="AI生成图片" class="gallery-img">
+                <div class="gallery-desc">科技感十足的太空站</div>
+            </div>
+            
+            <div class="gallery-item">
+                <img src="https://picsum.photos/400/400?random=12" alt="AI生成图片" class="gallery-img">
+                <div class="gallery-desc">水晶城堡与彩虹</div>
+            </div>
+            
+            <div class="gallery-item">
+                <img src="https://picsum.photos/400/400?random=13" alt="AI生成图片" class="gallery-img">
+                <div class="gallery-desc">冰雪覆盖的山峰日落</div>
+            </div>
+        </div>
+        
+        <!-- 如果没有图片则显示空状态 -->
+        <!-- 
+        <div class="empty-gallery">
+            <div class="empty-icon">🖼️</div>
+            <div>您的画廊还是空的</div>
+            <div style="margin-top: 5px; font-size: 12px;">创建您的第一幅AI画作</div>
+            <button class="create-btn">
+                <span class="btn-icon">+</span>
+                创建图片
+            </button>
+        </div>
+        -->
+    </div>
+    
+    <!-- 底部导航栏 -->
+    <div class="navbar">
+        <div class="navbar-item">
+            <div class="navbar-icon">🏠</div>
+            <div>首页</div>
+        </div>
+        <div class="navbar-item active">
+            <div class="navbar-icon">👤</div>
+            <div>我的</div>
+        </div>
+    </div>
+</body>
+</html> 

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI画廊 - 首页</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/tdesign-miniprogram/dist/tdesign.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        .navbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background-color: white;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid #eaeaea;
+            z-index: 100;
+        }
+        .navbar-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #999;
+            font-size: 12px;
+        }
+        .navbar-item.active {
+            color: #0052d9; /* TDesign 主色 */
+        }
+        .navbar-icon {
+            font-size: 24px;
+            margin-bottom: 2px;
+        }
+        .container {
+            padding: 12px;
+            padding-bottom: 70px;
+        }
+        .waterfall {
+            column-count: 2;
+            column-gap: 8px;
+        }
+        .waterfall-item {
+            break-inside: avoid;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .waterfall-img {
+            width: 100%;
+            display: block;
+        }
+        .waterfall-desc {
+            padding: 8px 12px;
+            font-size: 13px;
+            color: #333;
+        }
+        .fab-button {
+            position: fixed;
+            right: 20px;
+            bottom: 80px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #0052d9; /* TDesign 主色 */
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 2px 8px rgba(0, 82, 217, 0.4);
+            z-index: 100;
+        }
+        .header {
+            position: sticky;
+            top: 0;
+            background-color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            border-bottom: 1px solid #eaeaea;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">AI画廊</div>
+    
+    <div class="container">
+        <div class="waterfall">
+            <!-- 图片项 -->
+            <div class="waterfall-item">
+                <img src="https://picsum.photos/400/400?random=1" alt="AI生成图片" class="waterfall-img">
+                <div class="waterfall-desc">梦幻星空下的女孩，动漫风格</div>
+            </div>
+            
+            <div class="waterfall-item">
+                <img src="https://picsum.photos/400/600?random=2" alt="AI生成图片" class="waterfall-img">
+                <div class="waterfall-desc">霓虹灯下的赛博朋克城市街道</div>
+            </div>
+            
+            <div class="waterfall-item">
+                <img src="https://picsum.photos/400/300?random=3" alt="AI生成图片" class="waterfall-img">
+                <div class="waterfall-desc">森林中的小木屋，晨雾缭绕，写实风格</div>
+            </div>
+            
+            <div class="waterfall-item">
+                <img src="https://picsum.photos/400/500?random=4" alt="AI生成图片" class="waterfall-img">
+                <div class="waterfall-desc">未来科技感十足的智能机器人，电影风格</div>
+            </div>
+            
+            <div class="waterfall-item">
+                <img src="https://picsum.photos/400/450?random=5" alt="AI生成图片" class="waterfall-img">
+                <div class="waterfall-desc">海底宫殿与美人鱼，梦幻水彩风</div>
+            </div>
+            
+            <div class="waterfall-item">
+                <img src="https://picsum.photos/400/550?random=6" alt="AI生成图片" class="waterfall-img">
+                <div class="waterfall-desc">宇宙中漂浮的宇航员，真实感照片风格</div>
+            </div>
+            
+            <div class="waterfall-item">
+                <img src="https://picsum.photos/400/350?random=7" alt="AI生成图片" class="waterfall-img">
+                <div class="waterfall-desc">山顶日落，一个人眺望远方，油画效果</div>
+            </div>
+            
+            <div class="waterfall-item">
+                <img src="https://picsum.photos/400/400?random=8" alt="AI生成图片" class="waterfall-img">
+                <div class="waterfall-desc">古代东方城市街景，人来人往，水墨画风格</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 悬浮添加按钮 -->
+    <div class="fab-button">+</div>
+    
+    <!-- 底部导航栏 -->
+    <div class="navbar">
+        <div class="navbar-item active">
+            <div class="navbar-icon">🏠</div>
+            <div>首页</div>
+        </div>
+        <div class="navbar-item">
+            <div class="navbar-icon">👤</div>
+            <div>我的</div>
+        </div>
+    </div>
+</body>
+</html> 
