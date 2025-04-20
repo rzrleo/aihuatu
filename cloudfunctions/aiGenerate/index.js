@@ -309,6 +309,67 @@ async function getPublicImages(pageIndex = 0, pageSize = 10) {
   }
 }
 
+// 删除图片记录和云存储中的文件
+async function deleteImage(imageId, userId) {
+  try {
+    console.log('开始删除图片, imageId:', imageId, 'userId:', userId);
+    
+    if (!imageId) {
+      throw new Error('图片ID不能为空');
+    }
+    
+    if (!userId) {
+      throw new Error('用户ID不能为空，请确保用户已登录');
+    }
+    
+    const db = cloud.database();
+    
+    // 先获取图片记录，检查权限并获取文件ID
+    const imageRecord = await db.collection('images').doc(imageId).get();
+    
+    if (!imageRecord || !imageRecord.data) {
+      throw new Error('找不到指定图片记录');
+    }
+    
+    // 检查记录的所有者是否为当前用户
+    if (imageRecord.data._openid !== userId) {
+      throw new Error('无权删除此图片，只能删除自己的图片');
+    }
+    
+    // 获取图片的云存储文件ID
+    const fileID = imageRecord.data.fileID;
+    
+    // 删除数据库记录
+    console.log('开始删除数据库记录:', imageId);
+    await db.collection('images').doc(imageId).remove();
+    
+    // 如果是云存储的文件，尝试删除
+    if (fileID && fileID.startsWith('cloud://')) {
+      try {
+        console.log('开始删除云存储文件:', fileID);
+        await cloud.deleteFile({
+          fileList: [fileID]
+        });
+        console.log('云存储文件删除成功');
+      } catch (fileError) {
+        // 文件删除失败，但数据库记录已删除，记录错误但不影响结果
+        console.error('删除云存储文件失败:', fileError);
+      }
+    }
+    
+    return {
+      success: true,
+      message: '图片删除成功'
+    };
+  } catch (error) {
+    console.error('删除图片失败:', error);
+    return {
+      success: false,
+      error: error.message || '删除图片失败'
+    };
+  }
+}
+
 // 云函数入口函数
 exports.main = async (event, context) => {
   const { action, params } = event
@@ -343,6 +404,12 @@ exports.main = async (event, context) => {
       return await getPublicImages(
         params?.pageIndex || 0, 
         params?.pageSize || 10
+      )
+      
+    case 'deleteImage':
+      return await deleteImage(
+        params.imageId,
+        OPENID
       )
 
     default:

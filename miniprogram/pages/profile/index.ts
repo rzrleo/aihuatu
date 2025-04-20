@@ -13,7 +13,7 @@ interface ImageItem {
   prompt: string;
   _id?: string;
   _openid?: string;
-  createTime?: number;
+  createTime?: any;
 }
 
 // 云函数返回结果接口
@@ -68,6 +68,18 @@ Page({
     this.setData({ isLoading: true });
     
     try {
+      // 检查是否强制登出
+      const forceLogout = wx.getStorageSync('forceLogout');
+      if (forceLogout) {
+        console.log('用户已强制登出，不进行自动登录');
+        this.setData({ 
+          isLoggedIn: false,
+          userInfo: null,
+          isLoading: false
+        });
+        return; // 不继续执行后续登录逻辑
+      }
+      
       // 调用云函数获取用户OpenID
       const { result } = await wx.cloud.callFunction({
         name: 'login',
@@ -118,6 +130,9 @@ Page({
     });
     
     try {
+      // 清除可能存在的登出状态
+      wx.removeStorageSync('forceLogout');
+      
       // 获取用户信息
       const userProfileRes = await wx.getUserProfile({
         desc: '用于完善用户资料'
@@ -296,6 +311,128 @@ Page({
         url: `/pages/result/index?prompt=${encodeURIComponent(image.prompt)}&imageUrl=${encodeURIComponent(image.imageUrl)}`
       });
     }
+  },
+
+  // 删除图片
+  onDeleteImage(e: any) {
+    console.log('===== 删除图片函数被触发 =====');
+    
+    // 避免冒泡导致触发onImageClick
+    if (e && e.stopPropagation) {
+      e.stopPropagation();
+    }
+    
+    // 获取图片索引
+    const index = e.currentTarget.dataset.index;
+    console.log('点击删除按钮, 索引:', index);
+    
+    // 获取图片信息
+    const image = this.data.myImages[index];
+    console.log('待删除图片信息:', image);
+    
+    // 验证图片信息
+    if (!image || !image._id) {
+      console.log('图片信息无效，无法删除');
+      wx.showToast({
+        title: '无法删除此图片',
+        icon: 'none'
+      });
+      return;
+    }
+    
+    // 显示确认对话框
+    wx.showModal({
+      title: '确认删除',
+      content: '确定要删除这张图片吗？此操作不可恢复。',
+      confirmColor: '#e34d59',
+      success: async (res) => {
+        // 用户点击确认
+        if (res.confirm) {
+          console.log('用户确认删除');
+          wx.showLoading({
+            title: '正在删除...',
+            mask: true
+          });
+          
+          try {
+            console.log('开始删除图片:', image._id);
+            
+            // 调用云函数删除图片
+            const deleteResult = await wx.cloud.callFunction({
+              name: 'aiGenerate',
+              data: {
+                action: 'deleteImage',
+                params: {
+                  imageId: image._id
+                }
+              }
+            });
+            
+            console.log('删除图片结果:', deleteResult);
+            const result = deleteResult.result as { success: boolean, message?: string, error?: any };
+            
+            if (result && result.success) {
+              console.log('删除成功，更新UI');
+              // 从列表中移除此图片
+              const newImages = [...this.data.myImages];
+              newImages.splice(index, 1);
+              
+              this.setData({
+                myImages: newImages
+              });
+              
+              wx.hideLoading();
+              wx.showToast({
+                title: '删除成功',
+                icon: 'success'
+              });
+            } else {
+              console.log('删除失败，报错');
+              throw new Error(result?.error || '删除失败');
+            }
+          } catch (error) {
+            console.error('删除图片失败:', error);
+            wx.hideLoading();
+            
+            wx.showToast({
+              title: '删除失败，请重试',
+              icon: 'none'
+            });
+          }
+        } else {
+          console.log('用户取消删除');
+        }
+      }
+    });
+  },
+
+  // 用户登出
+  onLogout() {
+    wx.showModal({
+      title: '确认登出',
+      content: '您确定要退出登录吗？',
+      confirmColor: '#0052d9',
+      success: (res) => {
+        if (res.confirm) {
+          console.log('用户确认登出');
+          
+          // 设置登出状态
+          this.setData({
+            isLoggedIn: false,
+            userInfo: null,
+            myImages: []
+          });
+          
+          // 记录登出状态到本地存储，在checkLoginStatus中会检查此值
+          wx.setStorageSync('forceLogout', true);
+          
+          wx.showToast({
+            title: '已退出登录',
+            icon: 'success'
+          });
+        }
+      }
+    });
   },
 
   // 刷新用户信息（不包含登录状态检查）

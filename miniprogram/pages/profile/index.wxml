@@ -44,9 +44,19 @@
       <block wx:if="{{myImages.length > 0}}">
         <view class="gallery">
           <block wx:for="{{myImages}}" wx:key="id">
-            <view class="gallery-item" bindtap="onImageClick" data-index="{{index}}">
-              <image src="{{item.imageUrl}}" mode="aspectFill" class="gallery-img" lazy-load />
-              <view class="gallery-desc">{{item.prompt}}</view>
+            <!-- 每个图片项 -->
+            <view class="gallery-item">
+              <!-- 图片和描述区域 -->
+              <view class="image-content" bindtap="onImageClick" data-index="{{index}}">
+                <image src="{{item.imageUrl}}" mode="aspectFill" class="gallery-img" lazy-load />
+                <view class="gallery-desc">{{item.prompt}}</view>
+              </view>
+              
+              <!-- 下方操作区域 -->
+              <view class="item-actions">
+                <view class="view-btn" bindtap="onImageClick" data-index="{{index}}">查看</view>
+                <view class="delete-btn-text" bindtap="onDeleteImage" data-index="{{index}}">删除</view>
+              </view>
             </view>
           </block>
         </view>
@@ -63,6 +73,13 @@
           </t-button>
         </view>
       </block>
+      
+      <!-- 退出登录按钮 -->
+      <view class="logout-section">
+        <t-button theme="danger" variant="outline" block bind:tap="onLogout" class="logout-btn">
+          退出登录
+        </t-button>
+      </view>
     </block>
   </view>
 </view> 

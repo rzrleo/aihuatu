@@ -142,12 +142,10 @@
   overflow: hidden;
   box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.05);
   position: relative;
-  transition: transform 0.2s ease;
-  transform: translateZ(0);
 }
 
-.gallery-item:active {
-  transform: scale(0.97);
+.image-content {
+  width: 100%;
 }
 
 .gallery-img {
@@ -164,6 +162,34 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* 操作按钮 */
+.item-actions {
+  display: flex;
+  border-top: 1rpx solid #f5f5f5;
+}
+
+.view-btn, .delete-btn-text {
+  flex: 1;
+  text-align: center;
+  padding: 16rpx 0;
+  font-size: 26rpx;
+  color: #666;
+  background-color: #fff;
+}
+
+.view-btn {
+  border-right: 1rpx solid #f5f5f5;
+  color: #0052d9;
+}
+
+.delete-btn-text {
+  color: #e34d59;
+}
+
+.view-btn:active, .delete-btn-text:active {
+  background-color: #f5f5f5;
 }
 
 .empty-gallery {
@@ -189,4 +215,43 @@
 
 .btn-icon {
   margin-right: 12rpx;
+}
+
+/* 登出部分 */
+.logout-section {
+  margin-top: 60rpx;
+  padding-top: 40rpx;
+  border-top: 1rpx solid #eee;
+}
+
+.logout-btn {
+  --td-button-danger-outline-color: #e34d59 !important;
+  --td-button-danger-outline-border-color: #e34d59 !important;
+  --td-button-danger-outline-active-bg-color: rgba(227, 77, 89, 0.05) !important;
+}
+
+/* 删除提示 */
+.delete-hint {
+  position: absolute;
+  top: 10rpx;
+  right: 10rpx;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  font-size: 22rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 20rpx;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.gallery-item:active .delete-hint {
+  opacity: 0.8;
+}
+
+/* 画廊提示 */
+.gallery-tip {
+  text-align: center;
+  font-size: 24rpx;
+  color: #999;
+  padding: 8rpx 0 30rpx;
 } 
