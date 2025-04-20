@@ -1,3 +1,16 @@
+// index.ts
+// 云函数返回结果接口
+interface CloudFunctionResult {
+  openid?: string;
+  [key: string]: any;
+}
+
+// 数据库操作结果接口
+interface DbOperationResult {
+  _id?: string;
+  errMsg?: string;
+}
+
 Page({
   data: {
     prompt: '',
@@ -9,11 +22,21 @@ Page({
       '科幻城市夜景，霓虹灯光，未来感，赛博朋克风格',
       '古代东方宫殿内景，龙柱雕刻，红色装饰，金色点缀，壮观',
       '宇航员站在外星球表面，远处有巨大行星，写实风格，科幻'
-    ]
+    ],
+    envId: 'aihuatu-5gl6dhqt6d05ca01'
   },
 
   onLoad() {
     // 页面加载时执行
+    // 确保云环境已初始化
+    if (!wx.cloud) {
+      console.error('请使用 2.2.3 或以上的基础库以使用云能力');
+    } else {
+      wx.cloud.init({
+        env: this.data.envId,
+        traceUser: true,
+      });
+    }
   },
 
   // 返回上一页
@@ -71,7 +94,7 @@ Page({
   },
 
   // 生成图片
-  onGenerateClick() {
+  async onGenerateClick() {
     if (!this.data.prompt.trim()) {
       wx.showToast({
         title: '请输入画面提示词',
@@ -90,8 +113,48 @@ Page({
       mask: true
     });
     
-    // 模拟AI生成延迟
-    setTimeout(() => {
+    try {
+      // 这里实际项目中应该调用AI服务API生成图片
+      // 在这个原型中我们使用随机图片来模拟
+
+      // 先获取用户的OpenID，确保图片关联到用户
+      const loginRes = await wx.cloud.callFunction({
+        name: 'login',
+        data: {}
+      });
+      
+      const cloudResult = loginRes.result as CloudFunctionResult;
+      if (!cloudResult || !cloudResult.openid) {
+        throw new Error('获取用户OpenID失败');
+      }
+      
+      // 模拟生成图片延迟
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // 生成随机图片ID，实际项目中这里应是AI服务返回的图片URL
+      const randomId = Math.floor(Math.random() * 1000);
+      const mockImageUrl = `https://picsum.photos/800/800?random=${randomId}`;
+      
+      // 模拟图片上传到云存储
+      // 实际项目中，这里应该是将AI服务生成的图片上传到云存储
+      
+      // 创建数据库记录
+      const db = wx.cloud.database();
+      const dbResult = await db.collection('images').add({
+        data: {
+          prompt: this.data.prompt,
+          negativePrompt: this.data.negativePrompt,
+          fileID: mockImageUrl, // 实际应该是云存储返回的fileID
+          createTime: db.serverDate(),
+          status: 'completed'
+        }
+      });
+      
+      const addResult = dbResult as DbOperationResult;
+      if (!addResult._id) {
+        throw new Error('保存图片记录失败');
+      }
+      
       wx.hideLoading();
       this.setData({
         generating: false
@@ -99,8 +162,19 @@ Page({
       
       // 生成完成后携带参数跳转到结果页
       wx.navigateTo({
-        url: `/pages/result/index?prompt=${encodeURIComponent(this.data.prompt)}&negativePrompt=${encodeURIComponent(this.data.negativePrompt)}`
+        url: `/pages/result/index?prompt=${encodeURIComponent(this.data.prompt)}&negativePrompt=${encodeURIComponent(this.data.negativePrompt)}&imageUrl=${encodeURIComponent(mockImageUrl)}&imageId=${addResult._id}`
       });
-    }, 2000);
+    } catch (error) {
+      console.error('生成图片失败:', error);
+      wx.hideLoading();
+      this.setData({
+        generating: false
+      });
+      
+      wx.showToast({
+        title: '生成图片失败，请重试',
+        icon: 'none'
+      });
+    }
   }
 }); 

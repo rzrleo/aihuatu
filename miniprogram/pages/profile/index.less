@@ -9,6 +9,14 @@
   padding-bottom: 140rpx;
 }
 
+/* 加载中样式 */
+.loading-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
 /* 未登录状态 */
 .login-card {
   background-color: white;
@@ -52,19 +60,38 @@
   display: flex;
   align-items: center;
   box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.05);
-}
+  
+  .avatar-container {
+    position: relative;
+    
+    .user-avatar {
+      width: 120rpx;
+      height: 120rpx;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-right: 32rpx;
+      border: 4rpx solid #f0f0f0;
+    }
+    
+    .edit-avatar-btn {
+      position: absolute;
+      right: -10rpx;
+      bottom: 0;
+      width: 48rpx;
+      height: 48rpx;
+      border-radius: 50%;
+      background-color: var(--td-brand-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.2);
+    }
+  }
 
-.user-avatar {
-  width: 120rpx;
-  height: 120rpx;
-  border-radius: 50%;
-  object-fit: cover;
-  margin-right: 32rpx;
-  border: 4rpx solid #f0f0f0;
-}
-
-.user-info {
-  flex: 1;
+  .user-info {
+    flex: 1;
+  }
 }
 
 .user-name {

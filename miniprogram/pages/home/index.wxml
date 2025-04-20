@@ -4,7 +4,7 @@
   <view class="container">
     <view class="waterfall">
       <block wx:for="{{imageList}}" wx:key="id">
-        <view class="waterfall-item">
+        <view class="waterfall-item" bindtap="onImageClick" data-index="{{index}}">
           <image src="{{item.imageUrl}}" mode="widthFix" class="waterfall-img" lazy-load />
           <view class="waterfall-desc">{{item.prompt}}</view>
         </view>

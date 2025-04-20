@@ -1,0 +1,78 @@
+<view class="page">
+  <t-navbar title="编辑资料" left-icon="chevron-left" bind:go-back="onBack" />
+  
+  <view class="container">
+    <!-- 加载中状态 -->
+    <t-loading theme="circular" size="60rpx" class="loading-center" wx:if="{{isLoading}}" />
+    
+    <!-- 用户资料表单 -->
+    <block wx:if="{{userInfo}}">
+      <view class="form-card">
+        <view class="avatar-section">
+          <view class="avatar-title">头像</view>
+          <view class="avatar-wrapper" bind:tap="onChooseAvatar">
+            <image 
+              src="{{tempFilePath || userInfo.avatarUrl}}" 
+              class="avatar-image" 
+              mode="aspectFill" 
+            />
+            <view class="avatar-overlay">
+              <t-icon name="camera" size="48rpx" color="#ffffff" />
+            </view>
+          </view>
+        </view>
+        
+        <view class="info-section">
+          <view class="info-item">
+            <text class="info-label">昵称</text>
+            <input 
+              type="text" 
+              class="info-input" 
+              value="{{inputNickName}}" 
+              bindinput="onNickNameChange" 
+              placeholder="请输入昵称"
+              maxlength="12"
+            />
+          </view>
+          
+          <view class="info-item">
+            <text class="info-label">用户ID</text>
+            <text class="info-value">{{userInfo.userId}}</text>
+          </view>
+        </view>
+        
+        <!-- 上传进度 -->
+        <block wx:if="{{uploadProgress > 0 && uploadProgress < 100}}">
+          <view class="progress-section">
+            <text class="progress-text">头像上传中 {{uploadProgress}}%</text>
+            <progress 
+              percent="{{uploadProgress}}" 
+              stroke-width="4" 
+              active 
+              color="var(--td-brand-color)" 
+              class="progress-bar"
+            />
+          </view>
+        </block>
+      </view>
+      
+      <!-- 保存按钮 -->
+      <t-button 
+        theme="primary" 
+        size="large" 
+        block 
+        class="save-btn" 
+        bind:tap="onSaveProfile"
+        loading="{{isLoading}}"
+        disabled="{{isLoading}}"
+      >
+        保存修改
+      </t-button>
+      
+      <view class="tips-section">
+        <view class="tips-item">· 头像将用于个人主页和评论展示</view>
+        <view class="tips-item">· 昵称长度不能超过12个字符</view>
+      </view>
+    </block>
+  </view>
+</view> 

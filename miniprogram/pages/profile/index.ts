@@ -3,119 +3,257 @@ interface UserInfo {
   nickName: string;
   avatarUrl: string;
   userId: string;
+  _openid?: string;
+  _id?: string;
 }
 
 interface ImageItem {
   id: number;
   imageUrl: string;
   prompt: string;
+  _id?: string;
+  _openid?: string;
+  createTime?: number;
+}
+
+// 云函数返回结果接口
+interface CloudFunctionResult {
+  openid?: string;
+  [key: string]: any;
 }
 
 Page({
   data: {
     isLoggedIn: false,
     userInfo: null as UserInfo | null,
-    myImages: [] as ImageItem[]
+    myImages: [] as ImageItem[],
+    envId: 'aihuatu-5gl6dhqt6d05ca01',
+    isLoading: false
   },
 
   onLoad() {
-    // 检查是否已登录
-    this.checkLoginStatus();
+    // 初始化云环境
+    if (!wx.cloud) {
+      console.error('请使用 2.2.3 或以上的基础库以使用云能力');
+    } else {
+      wx.cloud.init({
+        env: this.data.envId,
+        traceUser: true,
+      });
+      
+      // 检查是否已登录
+      this.checkLoginStatus();
+    }
   },
 
   onShow() {
-    // 每次显示页面时，如果已登录则刷新我的图片
+    // 每次显示页面时，如果已登录则刷新用户信息和图片
     if (this.data.isLoggedIn) {
+      // 刷新用户信息
+      this.refreshUserInfo();
+      // 刷新图片列表
       this.loadMyImages();
     }
   },
 
   // 检查登录状态
-  checkLoginStatus() {
-    // 从本地存储获取用户信息
-    const userInfo = wx.getStorageSync('userInfo');
+  async checkLoginStatus() {
+    this.setData({ isLoading: true });
     
-    if (userInfo) {
-      this.setData({
-        isLoggedIn: true,
-        userInfo: userInfo
+    try {
+      // 调用云函数获取用户OpenID
+      const { result } = await wx.cloud.callFunction({
+        name: 'login',
+        data: {}
       });
       
-      // 加载我的图片
-      this.loadMyImages();
+      const cloudResult = result as CloudFunctionResult;
+      if (cloudResult && cloudResult.openid) {
+        const openid = cloudResult.openid;
+        console.log('获取到用户openid:', openid);
+        
+        // 根据openid查询用户数据
+        const db = wx.cloud.database();
+        const userResult = await db.collection('users').where({
+          _openid: openid
+        }).get();
+        
+        if (userResult && userResult.data && userResult.data.length > 0) {
+          // 用户存在，设置登录状态
+          const userInfo = userResult.data[0] as UserInfo;
+          this.setData({
+            isLoggedIn: true,
+            userInfo: userInfo,
+            isLoading: false
+          });
+          
+          // 加载用户创建的图片
+          this.loadMyImages();
+        } else {
+          // 用户不存在，保持未登录状态
+          this.setData({ isLoading: false });
+        }
+      } else {
+        this.setData({ isLoading: false });
+        console.error('获取用户openid失败');
+      }
+    } catch (error) {
+      this.setData({ isLoading: false });
+      console.error('检查登录状态出错:', error);
     }
   },
 
-  // 登录处理
-  onLogin() {
+  // 处理用户登录
+  async onLogin() {
     // 显示加载中
     wx.showLoading({
       title: '登录中...',
     });
     
-    // 模拟微信登录
-    setTimeout(() => {
-      // 模拟用户数据
-      const mockUserInfo: UserInfo = {
-        nickName: '微信用户12345',
-        avatarUrl: 'https://picsum.photos/200/200?random=user',
-        userId: '100000123'
-      };
-      
-      // 保存到本地存储
-      wx.setStorageSync('userInfo', mockUserInfo);
-      
-      this.setData({
-        isLoggedIn: true,
-        userInfo: mockUserInfo
+    try {
+      // 获取用户信息
+      const userProfileRes = await wx.getUserProfile({
+        desc: '用于完善用户资料'
       });
       
-      // 加载我的图片
-      this.loadMyImages();
-      
+      if (userProfileRes) {
+        // 获取云函数返回的openid
+        const { result } = await wx.cloud.callFunction({
+          name: 'login',
+          data: {}
+        });
+        
+        const cloudResult = result as CloudFunctionResult;
+        if (cloudResult && cloudResult.openid) {
+          const openid = cloudResult.openid;
+          
+          // 构建用户信息
+          const userInfo: UserInfo = {
+            nickName: userProfileRes.userInfo.nickName,
+            avatarUrl: userProfileRes.userInfo.avatarUrl,
+            userId: openid.slice(-8) // 用openid末8位作为用户ID展示
+          };
+          
+          // 查询用户是否已经存在
+          const db = wx.cloud.database();
+          const userResult = await db.collection('users').where({
+            _openid: openid
+          }).get();
+          
+          if (userResult.data.length === 0) {
+            // 用户不存在，添加到数据库
+            await db.collection('users').add({
+              data: {
+                ...userInfo,
+                createTime: db.serverDate(),
+                updateTime: db.serverDate()
+              }
+            });
+            console.log('新用户注册成功');
+          } else {
+            // 用户已存在，更新用户信息
+            const docId = userResult.data[0]._id;
+            if (docId) {
+              await db.collection('users').doc(docId).update({
+                data: {
+                  nickName: userInfo.nickName,
+                  avatarUrl: userInfo.avatarUrl,
+                  updateTime: db.serverDate()
+                }
+              });
+              console.log('更新用户信息成功');
+            }
+          }
+          
+          // 设置登录状态
+          this.setData({
+            isLoggedIn: true,
+            userInfo: userInfo
+          });
+          
+          // 加载用户图片
+          this.loadMyImages();
+          
+          // 显示成功提示
+          wx.hideLoading();
+          wx.showToast({
+            title: '登录成功',
+            icon: 'success'
+          });
+        } else {
+          throw new Error('获取用户openid失败');
+        }
+      }
+    } catch (error) {
       wx.hideLoading();
-      
-      // 显示成功提示
+      console.error('登录失败:', error);
       wx.showToast({
-        title: '登录成功',
-        icon: 'success'
+        title: '登录失败，请重试',
+        icon: 'none'
       });
-    }, 1500);
+    }
   },
 
   // 加载我的图片
-  loadMyImages() {
-    // 模拟加载用户图片数据
-    setTimeout(() => {
-      // 模拟空状态，取消下面注释可以显示有图片的情况
-      const mockImages: ImageItem[] = [
-        {
-          id: 101,
-          imageUrl: 'https://picsum.photos/400/400?random=10',
-          prompt: '梦幻童话森林，魔法生物'
-        },
-        {
-          id: 102,
-          imageUrl: 'https://picsum.photos/400/400?random=11',
-          prompt: '科技感十足的太空站'
-        },
-        {
-          id: 103,
-          imageUrl: 'https://picsum.photos/400/400?random=12',
-          prompt: '水晶城堡与彩虹'
-        },
-        {
-          id: 104,
-          imageUrl: 'https://picsum.photos/400/400?random=13',
-          prompt: '冰雪覆盖的山峰日落'
-        }
-      ];
-      
-      this.setData({
-        // myImages: [] // 空状态测试
-        myImages: mockImages // 有图片状态
+  async loadMyImages() {
+    if (!this.data.isLoggedIn) return;
+    
+    this.setData({ isLoading: true });
+    
+    try {
+      const db = wx.cloud.database();
+      // 获取当前用户的OpenID
+      const { result } = await wx.cloud.callFunction({
+        name: 'login',
+        data: {}
       });
-    }, 500);
+      
+      const cloudResult = result as CloudFunctionResult;
+      if (cloudResult && cloudResult.openid) {
+        // 查询当前用户的图片，按创建时间倒序排列
+        const result = await db.collection('images')
+          .where({
+            _openid: cloudResult.openid
+          })
+          .orderBy('createTime', 'desc')
+          .get();
+        
+        if (result && result.data) {
+          // 处理返回的图片数据
+          const images: ImageItem[] = result.data.map((item: any, index: number) => ({
+            id: index + 101, // 生成一个临时ID
+            imageUrl: item.fileID, // 云存储的图片fileID
+            prompt: item.prompt,
+            _id: item._id,
+            _openid: item._openid,
+            createTime: item.createTime
+          }));
+          
+          this.setData({
+            myImages: images,
+            isLoading: false
+          });
+        } else {
+          this.setData({
+            myImages: [],
+            isLoading: false
+          });
+        }
+      } else {
+        throw new Error('获取用户openid失败');
+      }
+    } catch (error) {
+      console.error('加载图片失败:', error);
+      this.setData({
+        myImages: [],
+        isLoading: false
+      });
+      
+      wx.showToast({
+        title: '加载图片失败',
+        icon: 'none'
+      });
+    }
   },
 
   // 跳转到创建图片页面
@@ -123,5 +261,44 @@ Page({
     wx.navigateTo({
       url: '/pages/create/index'
     });
+  },
+
+  // 跳转到编辑个人资料页面
+  onEditProfile() {
+    wx.navigateTo({
+      url: '/pages/profile/edit/index'
+    });
+  },
+
+  // 刷新用户信息（不包含登录状态检查）
+  async refreshUserInfo() {
+    try {
+      // 调用云函数获取用户OpenID
+      const { result } = await wx.cloud.callFunction({
+        name: 'login',
+        data: {}
+      });
+      
+      const cloudResult = result as CloudFunctionResult;
+      if (cloudResult && cloudResult.openid) {
+        const openid = cloudResult.openid;
+        
+        // 根据openid查询用户数据
+        const db = wx.cloud.database();
+        const userResult = await db.collection('users').where({
+          _openid: openid
+        }).get();
+        
+        if (userResult && userResult.data && userResult.data.length > 0) {
+          // 用户存在，更新用户信息
+          const userInfo = userResult.data[0] as UserInfo;
+          this.setData({
+            userInfo: userInfo
+          });
+        }
+      }
+    } catch (error) {
+      console.error('刷新用户信息出错:', error);
+    }
   }
 }); 

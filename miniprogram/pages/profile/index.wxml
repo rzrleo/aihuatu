@@ -2,8 +2,11 @@
   <t-navbar title="我的" />
   
   <view class="container">
+    <!-- 加载中状态 -->
+    <t-loading theme="circular" size="60rpx" class="loading-center" wx:if="{{isLoading}}" />
+    
     <!-- 未登录状态 -->
-    <block wx:if="{{!isLoggedIn}}">
+    <block wx:elif="{{!isLoggedIn}}">
       <view class="login-card">
         <view class="login-title">欢迎使用 AI 画廊</view>
         <view class="login-desc">登录后即可保存和管理您创作的AI图片，创建您的个人画廊</view>
@@ -18,7 +21,12 @@
     <block wx:else>
       <!-- 用户信息卡片 -->
       <view class="user-card">
-        <image src="{{userInfo.avatarUrl}}" class="user-avatar" />
+        <view class="avatar-container">
+          <image src="{{userInfo.avatarUrl}}" class="user-avatar" />
+          <view class="edit-avatar-btn" bind:tap="onEditProfile">
+            <t-icon name="edit" size="32rpx" />
+          </view>
+        </view>
         <view class="user-info">
           <view class="user-name">{{userInfo.nickName}}</view>
           <view class="user-id">ID: {{userInfo.userId}}</view>
