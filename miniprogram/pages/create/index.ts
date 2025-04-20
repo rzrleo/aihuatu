@@ -11,6 +11,19 @@ interface DbOperationResult {
   errMsg?: string;
 }
 
+// AI任务创建结果接口
+interface AiTaskResult {
+  success: boolean;
+  data?: {
+    output: {
+      task_id: string;
+      task_status: string;
+    };
+    request_id: string;
+  };
+  error?: any;
+}
+
 Page({
   data: {
     prompt: '',
@@ -26,7 +39,7 @@ Page({
     envId: 'aihuatu-5gl6dhqt6d05ca01'
   },
 
-  onLoad() {
+  onLoad(options: any) {
     // 页面加载时执行
     // 确保云环境已初始化
     if (!wx.cloud) {
@@ -35,6 +48,19 @@ Page({
       wx.cloud.init({
         env: this.data.envId,
         traceUser: true,
+      });
+    }
+
+    // 如果从结果页传回来的提示词，填充到输入框
+    if (options.prompt) {
+      this.setData({
+        prompt: decodeURIComponent(options.prompt)
+      });
+    }
+
+    if (options.negativePrompt) {
+      this.setData({
+        negativePrompt: decodeURIComponent(options.negativePrompt)
       });
     }
   },
@@ -107,63 +133,56 @@ Page({
       generating: true
     });
     
-    // 模拟生成过程
     wx.showLoading({
-      title: '正在生成图片...',
+      title: '正在创建任务...',
       mask: true
     });
     
     try {
-      // 这里实际项目中应该调用AI服务API生成图片
-      // 在这个原型中我们使用随机图片来模拟
-
-      // 先获取用户的OpenID，确保图片关联到用户
-      const loginRes = await wx.cloud.callFunction({
-        name: 'login',
-        data: {}
-      });
-      
-      const cloudResult = loginRes.result as CloudFunctionResult;
-      if (!cloudResult || !cloudResult.openid) {
-        throw new Error('获取用户OpenID失败');
-      }
-      
-      // 模拟生成图片延迟
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // 生成随机图片ID，实际项目中这里应是AI服务返回的图片URL
-      const randomId = Math.floor(Math.random() * 1000);
-      const mockImageUrl = `https://picsum.photos/800/800?random=${randomId}`;
-      
-      // 模拟图片上传到云存储
-      // 实际项目中，这里应该是将AI服务生成的图片上传到云存储
-      
-      // 创建数据库记录
-      const db = wx.cloud.database();
-      const dbResult = await db.collection('images').add({
+      // 调用云函数创建AI绘图任务
+      const createResult = await wx.cloud.callFunction({
+        name: 'aiGenerate',
         data: {
-          prompt: this.data.prompt,
-          negativePrompt: this.data.negativePrompt,
-          fileID: mockImageUrl, // 实际应该是云存储返回的fileID
-          createTime: db.serverDate(),
-          status: 'completed'
+          action: 'createTask',
+          params: {
+            prompt: this.data.prompt,
+            negativePrompt: this.data.negativePrompt,
+            n: 1,
+            size: '1024*1024'
+          }
         }
       });
       
-      const addResult = dbResult as DbOperationResult;
-      if (!addResult._id) {
-        throw new Error('保存图片记录失败');
+      // 处理返回结果
+      const aiResult = createResult.result as AiTaskResult;
+      
+      if (!aiResult.success || !aiResult.data || !aiResult.data.output || !aiResult.data.output.task_id) {
+        throw new Error('创建AI绘图任务失败: ' + (aiResult.error ? JSON.stringify(aiResult.error) : '未知错误'));
       }
       
+      // 获取任务ID
+      const taskId = aiResult.data.output.task_id;
+      console.log('AI绘图任务创建成功, taskId:', taskId);
+      
       wx.hideLoading();
-      this.setData({
-        generating: false
+      wx.showLoading({
+        title: '生成图片中...',
+        mask: true
       });
       
-      // 生成完成后携带参数跳转到结果页
-      wx.navigateTo({
-        url: `/pages/result/index?prompt=${encodeURIComponent(this.data.prompt)}&negativePrompt=${encodeURIComponent(this.data.negativePrompt)}&imageUrl=${encodeURIComponent(mockImageUrl)}&imageId=${addResult._id}`
-      });
+      // 等待2秒，然后跳转到结果页面
+      setTimeout(() => {
+        wx.hideLoading();
+        this.setData({
+          generating: false
+        });
+        
+        // 跳转到结果页
+        wx.navigateTo({
+          url: `/pages/result/index?prompt=${encodeURIComponent(this.data.prompt)}&negativePrompt=${encodeURIComponent(this.data.negativePrompt)}&taskId=${taskId}`
+        });
+      }, 2000);
+      
     } catch (error) {
       console.error('生成图片失败:', error);
       wx.hideLoading();

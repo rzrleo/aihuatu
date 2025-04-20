@@ -37,13 +37,14 @@
       <view class="section-title">
         <text class="section-icon">🖼️</text>
         <text>个人画廊</text>
+        <text class="refresh-text" bindtap="loadMyImages">刷新</text>
       </view>
       
       <!-- 如果有图片则显示画廊 -->
       <block wx:if="{{myImages.length > 0}}">
         <view class="gallery">
           <block wx:for="{{myImages}}" wx:key="id">
-            <view class="gallery-item">
+            <view class="gallery-item" bindtap="onImageClick" data-index="{{index}}">
               <image src="{{item.imageUrl}}" mode="aspectFill" class="gallery-img" lazy-load />
               <view class="gallery-desc">{{item.prompt}}</view>
             </view>
@@ -56,7 +57,7 @@
         <view class="empty-gallery">
           <view class="empty-icon">🖼️</view>
           <view>您的画廊还是空的</view>
-          <view style="margin-top: 10rpx; font-size: 24rpx;">创建您的第一幅AI画作</view>
+          <view style="margin-top: 10rpx; font-size: 24rpx; color: #999;">创建并发布您的第一幅AI画作</view>
           <t-button theme="primary" size="medium" class="create-btn" bind:tap="onCreateImage">
             <text class="btn-icon">+</text>创建图片
           </t-button>

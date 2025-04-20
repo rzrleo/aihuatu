@@ -2,13 +2,33 @@
   <t-navbar title="AI画廊" />
   
   <view class="container">
-    <view class="waterfall">
+    <!-- 瀑布流图片 -->
+    <view class="waterfall" wx:if="{{imageList.length > 0}}">
       <block wx:for="{{imageList}}" wx:key="id">
         <view class="waterfall-item" bindtap="onImageClick" data-index="{{index}}">
           <image src="{{item.imageUrl}}" mode="widthFix" class="waterfall-img" lazy-load />
           <view class="waterfall-desc">{{item.prompt}}</view>
+          <view class="waterfall-user" wx:if="{{item.user}}">
+            <image class="user-avatar" src="{{item.user.avatarUrl}}" mode="aspectFill" />
+            <text class="user-name">{{item.user.nickName}}</text>
+          </view>
         </view>
       </block>
+    </view>
+    
+    <!-- 空状态 -->
+    <view class="empty-state" wx:elif="{{!loading && imageList.length === 0}}">
+      <view class="empty-icon">🖼️</view>
+      <view class="empty-text">暂无作品</view>
+      <view class="empty-subtext">成为第一个发布作品的用户</view>
+      <t-button theme="primary" size="medium" bindtap="onFabClick" class="create-btn">
+        开始创作
+      </t-button>
+    </view>
+    
+    <!-- 没有更多数据提示 -->
+    <view wx:if="{{!hasMore && imageList.length > 0}}" class="no-more-tips">
+      — 没有更多内容了 —
     </view>
   </view>
   

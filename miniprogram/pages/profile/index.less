@@ -106,31 +106,48 @@
   color: #999;
 }
 
+/* 部分标题 */
 .section-title {
-  font-size: 32rpx;
-  font-weight: bold;
+  font-size: 34rpx;
+  font-weight: 500;
   margin: 40rpx 0 24rpx;
-  color: #333;
   display: flex;
   align-items: center;
+  position: relative;
 }
 
 .section-icon {
   margin-right: 12rpx;
-  font-size: 36rpx;
 }
 
+.refresh-text {
+  position: absolute;
+  right: 0;
+  font-size: 26rpx;
+  color: #999;
+  font-weight: normal;
+}
+
+/* 作品画廊 */
 .gallery {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  grid-gap: 16rpx;
+  gap: 20rpx;
+  margin-bottom: 40rpx;
 }
 
 .gallery-item {
   background-color: white;
-  border-radius: 16rpx;
+  border-radius: 12rpx;
   overflow: hidden;
-  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.05);
+  position: relative;
+  transition: transform 0.2s ease;
+  transform: translateZ(0);
+}
+
+.gallery-item:active {
+  transform: scale(0.97);
 }
 
 .gallery-img {

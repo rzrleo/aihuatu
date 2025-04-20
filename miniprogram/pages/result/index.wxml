@@ -6,14 +6,32 @@
       <view class="prompt-text">{{prompt}}</view>
       
       <view class="result-image-container">
-        <image src="{{imageUrl}}" mode="aspectFit" class="result-image" show-menu-by-longpress />
+        <image 
+          wx:if="{{imageUrl}}" 
+          src="{{imageUrl}}" 
+          mode="aspectFit" 
+          class="result-image" 
+          show-menu-by-longpress 
+        />
+        <view wx:elif="{{generationFailed}}" class="failed-container">
+          <t-icon name="close-circle" size="80rpx" color="#e34d59" />
+          <view class="failed-text">AI绘图生成失败</view>
+          <view class="failed-subtext">请返回重试或调整提示词</view>
+        </view>
       </view>
       
       <view class="action-buttons">
         <t-button theme="light" icon="refresh" class="retry-btn" bind:tap="onRetryClick">
           重新生成
         </t-button>
-        <t-button theme="primary" icon="check" class="publish-btn" bind:tap="onPublishClick">
+        <t-button 
+          theme="primary" 
+          icon="check" 
+          class="publish-btn" 
+          bind:tap="onPublishClick"
+          loading="{{publishing}}"
+          disabled="{{publishing || !imageUrl}}"
+        >
           发布图片
         </t-button>
       </view>
@@ -24,8 +42,8 @@
   <t-overlay visible="{{loading}}" class="loading-overlay">
     <view class="loading-content">
       <t-loading theme="circular" size="60rpx" />
-      <view class="loading-text">正在生成图片中...</view>
-      <view class="loading-subtext">这可能需要几秒钟时间</view>
+      <view class="loading-text">{{taskId ? '正在为您绘制图片中...' : '正在加载图片...'}}</view>
+      <view class="loading-subtext">{{taskId ? '您的创意即将呈现，请耐心等待' : '这可能需要几秒钟时间'}}</view>
     </view>
   </t-overlay>
 </view> 

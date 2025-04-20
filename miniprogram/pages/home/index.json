@@ -1,7 +1,8 @@
 {
   "usingComponents": {
     "t-navbar": "tdesign-miniprogram/navbar/navbar",
-    "t-loading": "tdesign-miniprogram/loading/loading"
+    "t-loading": "tdesign-miniprogram/loading/loading",
+    "t-button": "tdesign-miniprogram/button/button"
   },
   "enablePullDownRefresh": true,
   "navigationStyle": "custom",

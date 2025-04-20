@@ -22,6 +22,13 @@ interface CloudFunctionResult {
   [key: string]: any;
 }
 
+// 用户图片结果接口
+interface UserImagesResult {
+  success: boolean;
+  data?: any[];
+  error?: any;
+}
+
 Page({
   data: {
     isLoggedIn: false,
@@ -201,46 +208,49 @@ Page({
     this.setData({ isLoading: true });
     
     try {
-      const db = wx.cloud.database();
-      // 获取当前用户的OpenID
-      const { result } = await wx.cloud.callFunction({
-        name: 'login',
-        data: {}
+      console.log('开始加载用户图片列表');
+      
+      // 调用云函数获取用户发布的图片
+      const res = await wx.cloud.callFunction({
+        name: 'aiGenerate',
+        data: {
+          action: 'getUserImages'
+        }
       });
       
-      const cloudResult = result as CloudFunctionResult;
-      if (cloudResult && cloudResult.openid) {
-        // 查询当前用户的图片，按创建时间倒序排列
-        const result = await db.collection('images')
-          .where({
-            _openid: cloudResult.openid
-          })
-          .orderBy('createTime', 'desc')
-          .get();
+      console.log('获取用户图片云函数返回:', res);
+      const result = res.result as UserImagesResult;
+      
+      if (result && result.success && result.data) {
+        console.log(`获取到${result.data.length}张用户图片`);
         
-        if (result && result.data) {
-          // 处理返回的图片数据
-          const images: ImageItem[] = result.data.map((item: any, index: number) => ({
+        // 处理返回的图片数据
+        const images: ImageItem[] = result.data.map((item: any, index: number) => {
+          console.log(`处理图片 ${index + 1}:`, item.fileID);
+          return {
             id: index + 101, // 生成一个临时ID
             imageUrl: item.fileID, // 云存储的图片fileID
-            prompt: item.prompt,
+            prompt: item.prompt || '未设置提示词',
             _id: item._id,
             _openid: item._openid,
             createTime: item.createTime
-          }));
-          
-          this.setData({
-            myImages: images,
-            isLoading: false
-          });
-        } else {
-          this.setData({
-            myImages: [],
-            isLoading: false
-          });
-        }
+          };
+        });
+        
+        this.setData({
+          myImages: images,
+          isLoading: false
+        });
       } else {
-        throw new Error('获取用户openid失败');
+        console.warn('未获取到用户图片或返回格式错误:', result);
+        this.setData({
+          myImages: [],
+          isLoading: false
+        });
+        
+        if (result && result.error) {
+          console.error('获取用户图片列表失败:', result.error);
+        }
       }
     } catch (error) {
       console.error('加载图片失败:', error);
@@ -268,6 +278,24 @@ Page({
     wx.navigateTo({
       url: '/pages/profile/edit/index'
     });
+  },
+
+  // 点击图片查看详情
+  onImageClick(e: any) {
+    const index = e.currentTarget.dataset.index;
+    const image = this.data.myImages[index];
+    
+    if (image && image._id) {
+      // 如果有_id，跳转到结果页查看详情
+      wx.navigateTo({
+        url: `/pages/result/index?imageId=${image._id}`
+      });
+    } else if (image) {
+      // 没有_id但有图片信息，传递参数
+      wx.navigateTo({
+        url: `/pages/result/index?prompt=${encodeURIComponent(image.prompt)}&imageUrl=${encodeURIComponent(image.imageUrl)}`
+      });
+    }
   },
 
   // 刷新用户信息（不包含登录状态检查）

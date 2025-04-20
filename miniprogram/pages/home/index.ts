@@ -1,10 +1,26 @@
+interface UserInfo {
+  nickName: string;
+  avatarUrl: string;
+  userId: string;
+}
+
 interface ImageItem {
   id: number;
   imageUrl: string;
   prompt: string;
   _id?: string;
   _openid?: string;
-  createTime?: number;
+  createTime?: any;
+  publishTime?: any;
+  user?: UserInfo;
+}
+
+// 云函数结果接口
+interface PublicImagesResult {
+  success: boolean;
+  data?: any[];
+  total?: number;
+  error?: any;
 }
 
 // 云环境ID
@@ -14,7 +30,7 @@ Page({
   data: {
     imageList: [] as ImageItem[],
     loading: false,
-    page: 1,
+    page: 0, // 从0开始计数
     pageSize: 10,
     hasMore: true,
     envId: envId
@@ -60,25 +76,44 @@ Page({
     this.setData({ loading: true });
 
     try {
-      const db = wx.cloud.database();
-      const result = await db.collection('images')
-        .where({
-          published: true // 只获取已发布的图片
-        })
-        .orderBy('publishTime', 'desc')
-        .limit(this.data.pageSize)
-        .get();
+      console.log('开始加载首页图片列表, 页码:', this.data.page);
       
-      if (result && result.data && result.data.length > 0) {
+      // 显示加载中提示
+      if (this.data.page === 0) {
+        wx.showNavigationBarLoading();
+      }
+      
+      // 调用云函数获取公开发布的图片
+      const res = await wx.cloud.callFunction({
+        name: 'aiGenerate',
+        data: {
+          action: 'getPublicImages',
+          params: {
+            pageIndex: this.data.page,
+            pageSize: this.data.pageSize
+          }
+        }
+      });
+      
+      console.log('获取公开图片云函数返回:', res);
+      const result = res.result as PublicImagesResult;
+      
+      if (result && result.success && result.data && result.data.length > 0) {
+        console.log(`获取到${result.data.length}张公开图片`);
+        
         // 处理返回的图片数据
-        const images: ImageItem[] = result.data.map((item: any, index: number) => ({
-          id: index + 1,
-          imageUrl: item.fileID,
-          prompt: item.prompt,
-          _id: item._id,
-          _openid: item._openid,
-          createTime: item.createTime
-        }));
+        const images: ImageItem[] = result.data.map((item: any, index: number) => {
+          return {
+            id: index + 1,
+            imageUrl: item.fileID,
+            prompt: item.prompt || '',
+            _id: item._id,
+            _openid: item._openid,
+            createTime: item.createTime,
+            publishTime: item.publishTime,
+            user: item.user
+          };
+        });
         
         this.setData({
           imageList: images,
@@ -86,20 +121,35 @@ Page({
           hasMore: result.data.length >= this.data.pageSize
         });
       } else {
-        // 没有数据时，使用示例数据（在实际项目中可以改为空数组）
-        this.loadSampleImages();
+        console.warn('未获取到公开图片或返回格式错误:', result);
+        
+        // 没有数据时，显示空状态
+        this.setData({
+          imageList: [],
+          loading: false,
+          hasMore: false
+        });
       }
     } catch (error) {
       console.error('加载图片失败:', error);
-      this.setData({ loading: false });
       
-      // 失败时使用示例数据
-      this.loadSampleImages();
+      this.setData({ 
+        loading: false,
+        hasMore: false
+      });
+      
+      wx.showToast({
+        title: '加载失败，请重试',
+        icon: 'none'
+      });
+    } finally {
+      wx.hideNavigationBarLoading();
+      wx.stopPullDownRefresh();
     }
   },
 
   async loadMoreImages() {
-    if (this.data.loading) return;
+    if (this.data.loading || !this.data.hasMore) return;
     
     this.setData({ 
       loading: true,
@@ -107,26 +157,38 @@ Page({
     });
 
     try {
-      const db = wx.cloud.database();
-      const result = await db.collection('images')
-        .where({
-          published: true
-        })
-        .orderBy('publishTime', 'desc')
-        .skip(this.data.page * this.data.pageSize)
-        .limit(this.data.pageSize)
-        .get();
+      console.log('加载更多图片, 页码:', this.data.page);
       
-      if (result && result.data && result.data.length > 0) {
+      // 调用云函数获取更多图片
+      const res = await wx.cloud.callFunction({
+        name: 'aiGenerate',
+        data: {
+          action: 'getPublicImages',
+          params: {
+            pageIndex: this.data.page,
+            pageSize: this.data.pageSize
+          }
+        }
+      });
+      
+      const result = res.result as PublicImagesResult;
+      
+      if (result && result.success && result.data && result.data.length > 0) {
+        console.log(`获取到${result.data.length}张更多图片`);
+        
         // 处理返回的图片数据
-        const newImages: ImageItem[] = result.data.map((item: any, index: number) => ({
-          id: this.data.imageList.length + index + 1,
-          imageUrl: item.fileID,
-          prompt: item.prompt,
-          _id: item._id,
-          _openid: item._openid,
-          createTime: item.createTime
-        }));
+        const newImages: ImageItem[] = result.data.map((item: any, index: number) => {
+          return {
+            id: this.data.imageList.length + index + 1,
+            imageUrl: item.fileID,
+            prompt: item.prompt || '',
+            _id: item._id,
+            _openid: item._openid,
+            createTime: item.createTime,
+            publishTime: item.publishTime,
+            user: item.user
+          };
+        });
         
         this.setData({
           imageList: [...this.data.imageList, ...newImages],
@@ -134,6 +196,7 @@ Page({
           hasMore: result.data.length >= this.data.pageSize
         });
       } else {
+        console.log('没有更多图片了');
         this.setData({
           loading: false,
           hasMore: false
@@ -142,45 +205,80 @@ Page({
     } catch (error) {
       console.error('加载更多图片失败:', error);
       this.setData({
-        loading: false,
-        hasMore: false
+        loading: false
+      });
+      
+      // 发生错误时不显示没有更多的提示，让用户可以再次尝试加载
+      wx.showToast({
+        title: '加载失败，请上滑重试',
+        icon: 'none'
       });
     }
   },
 
   // 加载示例图片（当数据库中没有图片时）
   loadSampleImages() {
-    // 模拟数据
+    // 模拟数据 - 添加用户信息
     const mockImages: ImageItem[] = [
       {
         id: 1,
         imageUrl: 'https://picsum.photos/400/400?random=1',
-        prompt: '梦幻星空下的女孩，动漫风格'
+        prompt: '梦幻星空下的女孩，动漫风格',
+        user: {
+          nickName: '示例用户1',
+          avatarUrl: 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0',
+          userId: 'sample1'
+        }
       },
       {
         id: 2,
         imageUrl: 'https://picsum.photos/400/600?random=2',
-        prompt: '霓虹灯下的赛博朋克城市街道'
+        prompt: '霓虹灯下的赛博朋克城市街道',
+        user: {
+          nickName: '示例用户2',
+          avatarUrl: 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0',
+          userId: 'sample2'
+        }
       },
       {
         id: 3,
         imageUrl: 'https://picsum.photos/400/300?random=3',
-        prompt: '森林中的小木屋，晨雾缭绕，写实风格'
+        prompt: '森林中的小木屋，晨雾缭绕，写实风格',
+        user: {
+          nickName: '示例用户3',
+          avatarUrl: 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0',
+          userId: 'sample3'
+        }
       },
       {
         id: 4,
         imageUrl: 'https://picsum.photos/400/500?random=4',
-        prompt: '未来科技感十足的智能机器人，电影风格'
+        prompt: '未来科技感十足的智能机器人，电影风格',
+        user: {
+          nickName: '示例用户4',
+          avatarUrl: 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0',
+          userId: 'sample4'
+        }
       },
       {
         id: 5,
         imageUrl: 'https://picsum.photos/400/450?random=5',
-        prompt: '海底宫殿与美人鱼，梦幻水彩风'
+        prompt: '海底宫殿与美人鱼，梦幻水彩风',
+        user: {
+          nickName: '示例用户5',
+          avatarUrl: 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0',
+          userId: 'sample5'
+        }
       },
       {
         id: 6,
         imageUrl: 'https://picsum.photos/400/550?random=6',
-        prompt: '宇宙中漂浮的宇航员，真实感照片风格'
+        prompt: '宇宙中漂浮的宇航员，真实感照片风格',
+        user: {
+          nickName: '示例用户6',
+          avatarUrl: 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0',
+          userId: 'sample6'
+        }
       }
     ];
 
@@ -194,7 +292,7 @@ Page({
   resetAndReload() {
     this.setData({
       imageList: [],
-      page: 1,
+      page: 0,
       hasMore: true
     });
     this.loadImages();
