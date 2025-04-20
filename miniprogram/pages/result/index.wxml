@@ -1,0 +1,31 @@
+<view class="page">
+  <t-navbar title="生成结果" left-arrow bind:go-back="onBack" />
+  
+  <view class="container">
+    <view class="result-card">
+      <view class="prompt-text">{{prompt}}</view>
+      
+      <view class="result-image-container">
+        <image src="{{imageUrl}}" mode="aspectFit" class="result-image" show-menu-by-longpress />
+      </view>
+      
+      <view class="action-buttons">
+        <t-button theme="light" icon="refresh" class="retry-btn" bind:tap="onRetryClick">
+          重新生成
+        </t-button>
+        <t-button theme="primary" icon="check" class="publish-btn" bind:tap="onPublishClick">
+          发布图片
+        </t-button>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 加载中遮罩层 -->
+  <t-overlay visible="{{loading}}" class="loading-overlay">
+    <view class="loading-content">
+      <t-loading theme="circular" size="60rpx" />
+      <view class="loading-text">正在生成图片中...</view>
+      <view class="loading-subtext">这可能需要几秒钟时间</view>
+    </view>
+  </t-overlay>
+</view> 

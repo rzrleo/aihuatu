@@ -1,0 +1,58 @@
+<view class="page">
+  <t-navbar title="创建图片" left-arrow bind:go-back="onBack" />
+  
+  <view class="container">
+    <view class="input-card">
+      <view class="input-label">画面提示词</view>
+      <view class="input-desc">描述您想要的图片内容，可以包含：人物、场景、风格、色调等元素</view>
+      
+      <t-textarea
+        value="{{prompt}}"
+        placeholder="例如：夕阳下的海滩，一个人背影，看着远方，写实油画风格"
+        maxlength="{{200}}"
+        indicator
+        autosize
+        bind:change="onPromptChange"
+        class="prompt-textarea"
+      />
+      
+      <view class="tag-container">
+        <block wx:for="{{suggestedTags}}" wx:key="index">
+          <view class="tag" bindtap="onTagClick" data-tag="{{item}}">{{item}}</view>
+        </block>
+      </view>
+      
+      <view class="negative-section">
+        <view class="input-label">不想要的元素（可选）</view>
+        <view class="input-desc">指定您不希望出现在图片中的内容</view>
+        <t-textarea
+          value="{{negativePrompt}}"
+          placeholder="例如：模糊、变形、文字、黑白"
+          maxlength="{{100}}"
+          indicator
+          autosize
+          bind:change="onNegativePromptChange"
+          class="negative-textarea"
+        />
+      </view>
+      
+      <t-button theme="primary" size="large" block class="submit-btn" bind:tap="onGenerateClick" loading="{{generating}}">
+        生成图片
+      </t-button>
+    </view>
+    
+    <view class="example-section">
+      <view class="example-title">
+        <text class="example-icon">💡</text>
+        <text>提示词示例</text>
+      </view>
+      <view class="example-list">
+        <block wx:for="{{examplePrompts}}" wx:key="index">
+          <view class="example-item" bindtap="onExampleClick" data-prompt="{{item}}">
+            {{item}}
+          </view>
+        </block>
+      </view>
+    </view>
+  </view>
+</view> 

@@ -1,0 +1,59 @@
+<view class="page">
+  <t-navbar title="我的" />
+  
+  <view class="container">
+    <!-- 未登录状态 -->
+    <block wx:if="{{!isLoggedIn}}">
+      <view class="login-card">
+        <view class="login-title">欢迎使用 AI 画廊</view>
+        <view class="login-desc">登录后即可保存和管理您创作的AI图片，创建您的个人画廊</view>
+        <t-button theme="primary" class="wechat-login-btn" bind:tap="onLogin" block>
+          <t-icon name="logo-wechat" class="wechat-icon" />
+          微信一键登录
+        </t-button>
+      </view>
+    </block>
+    
+    <!-- 已登录状态 -->
+    <block wx:else>
+      <!-- 用户信息卡片 -->
+      <view class="user-card">
+        <image src="{{userInfo.avatarUrl}}" class="user-avatar" />
+        <view class="user-info">
+          <view class="user-name">{{userInfo.nickName}}</view>
+          <view class="user-id">ID: {{userInfo.userId}}</view>
+        </view>
+      </view>
+      
+      <!-- 个人画廊 -->
+      <view class="section-title">
+        <text class="section-icon">🖼️</text>
+        <text>个人画廊</text>
+      </view>
+      
+      <!-- 如果有图片则显示画廊 -->
+      <block wx:if="{{myImages.length > 0}}">
+        <view class="gallery">
+          <block wx:for="{{myImages}}" wx:key="id">
+            <view class="gallery-item">
+              <image src="{{item.imageUrl}}" mode="aspectFill" class="gallery-img" lazy-load />
+              <view class="gallery-desc">{{item.prompt}}</view>
+            </view>
+          </block>
+        </view>
+      </block>
+      
+      <!-- 如果没有图片则显示空状态 -->
+      <block wx:else>
+        <view class="empty-gallery">
+          <view class="empty-icon">🖼️</view>
+          <view>您的画廊还是空的</view>
+          <view style="margin-top: 10rpx; font-size: 24rpx;">创建您的第一幅AI画作</view>
+          <t-button theme="primary" size="medium" class="create-btn" bind:tap="onCreateImage">
+            <text class="btn-icon">+</text>创建图片
+          </t-button>
+        </view>
+      </block>
+    </block>
+  </view>
+</view> 

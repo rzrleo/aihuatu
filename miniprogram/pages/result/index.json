@@ -1,0 +1,9 @@
+{
+  "usingComponents": {
+    "t-navbar": "tdesign-miniprogram/navbar/navbar",
+    "t-button": "tdesign-miniprogram/button/button",
+    "t-overlay": "tdesign-miniprogram/overlay/overlay",
+    "t-loading": "tdesign-miniprogram/loading/loading"
+  },
+  "navigationStyle": "custom"
+} 
